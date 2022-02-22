@@ -12,7 +12,7 @@ body {
   background-color: #fafafa;
   color: #212121;
   line-height: 1.5;
-  padding-top: 50px;
+  padding-top: 60px;
 }
 
 img {
@@ -77,4 +77,11 @@ button:hover {
 
 button:active {
   background-color: #d4d3d3;
+}
+
+.load {
+  display: flex;
+  justify-content: center;
+
+  padding: 40px;
 }

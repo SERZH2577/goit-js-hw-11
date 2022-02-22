@@ -1,18 +1,31 @@
-import './css/style.css';
+// import './css/style.css';
+import './sass/main.scss';
 import Notiflix from 'notiflix';
-import Axios from 'axios';
+import axios from 'axios';
+import SimpleLightbox from 'simplelightbox';
+import 'simplelightbox/dist/simple-lightbox.min.css';
+import { getSearchImg } from './js/api/imagesApi';
+import imagesCardTemplate from './js/components/imagesCard.hbs';
 
-const searchForm = document.querySelector('#search-form');
+const searchFormEl = document.querySelector('#search-form');
+const galleryEl = document.querySelector('.gallery');
+const loadMoreBtnEl = document.querySelector('.load-more');
 
-const URL = 'https://pixabay.com/api';
-const KEY = '25810966-6fb22a4db6c9a757ebd742847';
+searchFormEl.addEventListener('submit', onSearchBtn);
+searchFormEl.addEventListener('input', onSearchInput);
 
-searchForm.addEventListener('submit', onSearchBtn);
-searchForm.addEventListener('input', onSearchInput);
+getSearchImg().then(({ data }) => {
+  const firstImage = data.hits[2];
+  const firstImageTamplate = imagesCardTemplate(firstImage);
+
+  galleryEl.innerHTML = firstImageTamplate;
+
+  console.log(firstImageTamplate);
+});
 
 function onSearchBtn(e) {
   e.preventDefault();
-  console.log(e.target.value);
+  console.log(searchFormEl.searchQuery.value);
 }
 
 function onSearchInput(e) {
