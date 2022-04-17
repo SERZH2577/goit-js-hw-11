@@ -1,12 +1,27 @@
 import axios from 'axios';
 
+const txtInput = document.querySelector('#search-form');
+// const loadMoreBtnEl = document.querySelector('.load-more');
+
 const BASE_URL = 'https://pixabay.com/api';
 const KEY = '25810966-6fb22a4db6c9a757ebd742847';
 let pageNumber = 1;
 
 export const getSearchImg = () => {
-  return axios.get(`${BASE_URL}?key=${KEY}&page=${pageNumber}&per_page=40`);
+  return axios.get(
+    `${BASE_URL}?key=${KEY}&page=${pageNumber}&per_page=40&q=${txtInput.searchQuery.value}&image_type=photo&orientation=horizontal&safesearch=true`,
+  );
 };
+
+// const onLoadMore = e => {
+//   e.addEventListener('submit', onLoadMoreEEE);
+//   function onLoadMoreEEE() {
+//     pageNumber += 1;
+//   }
+// };
+
+// export { getSearchImg, onLoadMore };
+//
 
 // export const aaaAaaa = www => {
 //   fetch(`${BASE_URL}/?key=${KEY}&page=${pageNumber}&per_page=40&q=${www}&image_type=photo`)
