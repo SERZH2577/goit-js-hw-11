@@ -1,95 +1,114 @@
-// import './css/style.css';
-import './sass/main.scss';
 import Notiflix from 'notiflix';
-import axios from 'axios';
 import SimpleLightbox from 'simplelightbox';
 import 'simplelightbox/dist/simple-lightbox.min.css';
-import { getSearchImg, onLoadMore } from './js/api/imagesApi';
-import imagesCardTemplate from './js/components/imagesCard.hbs';
-import { Pagination } from './js/components/pagination';
+import { fetchImages } from './components/apiImages';
+import { createImageCard } from './components/templates';
+import { refs } from './components/refs';
+// import { onGoesNextPage } from './components/pagination';
 
-const searchFormEl = document.querySelector('#search-form');
-const galleryEl = document.querySelector('.gallery');
-const loadMoreBtnEl = document.querySelector('.load-more');
+const lightbox = new SimpleLightbox('.gallery a');
 
-searchFormEl.addEventListener('submit', onSearchBtn);
-searchFormEl.addEventListener('input', onSearchInput);
+refs.btnRef.addEventListener('click', onSearchButton);
+refs.btnNextRef.addEventListener('click', onGoesNextPage);
+refs.btnBackRef.addEventListener('click', onReturnsPreviousPage);
 
-// let pageNumber = 1;
+let pageNumber = 0;
+let totalHitsRes = 0;
+let inputValue = '';
+let successMessage = false;
 
-const imagePagination = new Pagination({
-  total: 1000,
-  onChangePage(val) {
-    console.log(val);
-  },
-});
-
-imagePagination.nextPage();
-
-const rendorImagesList = images => {
-  const imagesList = images
-    .map(image => {
-      const { largeImageURL, webformatURL, tags, likes, views, comments, downloads } = image;
-      return imagesCardTemplate({
-        largeImageURL,
-        webformatURL,
-        tags,
-        likes,
-        views,
-        comments,
-        downloads,
-      });
-    })
-    .join('');
-
-  galleryEl.innerHTML = imagesList;
-
-  let lightbox = new SimpleLightbox('.gallery a');
-};
-
-function onSearchBtn(e) {
+function onSearchButton(e) {
   e.preventDefault();
+  inputValue = refs.inputRef.value.trim();
 
-  getSearchImg().then(({ data }) => {
-    const { hits: images } = data;
+  if (refs.inputRef.value.trim() === '') {
+    Notiflix.Notify.failure(
+      'Sorry, there are no images matching your search query. Please try again.'
+    );
+    return;
+  }
 
-    console.log(getSearchImg());
-    console.log(data.totalHits);
+  successMessage = false;
+  pageNumber = 1;
 
-    if (data.hits.length < 1) {
-      Notiflix.Notify.failure('Oops, there is no country with that name');
-      galleryEl.innerHTML = '';
+  refs.btnBackRef.setAttribute('disabled', '');
+  refs.btnNextRef.removeAttribute('disabled');
 
-      loadMoreBtnEl.classList.add('hide_element');
-    } else {
-      rendorImagesList(images);
+  displayImagesOnThePage(inputValue);
 
-      loadMoreBtnEl.classList.remove('hide_element');
-
-      Notiflix.Notify.info(`Hooray! We found ${data.totalHits} images.`);
-    }
-  });
+  refs.searchFormRef.reset();
 }
 
-// onLoadMore(loadMoreBtnEl);
+function displayImagesOnThePage(val) {
+  fetchImages(val, pageNumber)
+    .then(result => {
+      totalHitsRes = result.totalHits;
+      return result.hits;
+    })
+    .then(images => {
+      if (totalHitsRes === 0) {
+        refs.galleryRef.innerHTML = '';
+        refs.btnNextRef.setAttribute('hidden', '');
+        refs.btnBackRef.setAttribute('hidden', '');
 
-// ++++++++++++++++++++++++++++++
+        Notiflix.Notify.failure(
+          'Sorry, there are no images matching your search query. Please try again.'
+        );
 
-function onSearchInput(e) {
-  console.log(e.target.value);
+        return;
+      }
+
+      if (!successMessage) {
+        Notiflix.Notify.success(`Hooray! We found ${totalHitsRes} images.`);
+        successMessage = true;
+      }
+
+      if (totalHitsRes <= 40) {
+        refs.btnNextRef.setAttribute('hidden', '');
+        refs.btnBackRef.setAttribute('hidden', '');
+      } else {
+        refs.btnNextRef.removeAttribute('hidden');
+        refs.btnBackRef.removeAttribute('hidden');
+      }
+
+      refs.galleryRef.innerHTML = images
+        .map(image => {
+          return createImageCard(image);
+        })
+        .join('');
+
+      lightbox.refresh();
+    })
+    .catch(error => console.log(error));
+
+  window.scrollBy(0, -10000000);
 }
 
-// Notiflix.Notify.info('Too many matches found. Please enter a more specific name.');
+// onGoesNextPage(pageNumber, inputValue, totalHitsRes, displayImagesOnThePage);
 
-// function fetchCountries(params) {
-//   fetch(`${URL}/?key=${KEY}&page=${pageNumber}&per_page=40&q=${params}&image_type=photo`)
-//     .then(res => {
-//       if (!res.ok) {
-//         throw new res();
-//       }
-//       return res.json();
-//     })
-//     .then(res => {
-//       return res;
-//     });
-// }
+function onGoesNextPage() {
+  pageNumber += 1;
+
+  if (pageNumber === Math.ceil(totalHitsRes / 40)) {
+    Notiflix.Notify.info(
+      "We're sorry, but you've reached the end of search results."
+    );
+    refs.btnNextRef.setAttribute('disabled', '');
+  }
+
+  displayImagesOnThePage(inputValue);
+
+  refs.btnBackRef.removeAttribute('disabled');
+}
+
+function onReturnsPreviousPage() {
+  pageNumber -= 1;
+
+  if (pageNumber === 1) {
+    refs.btnBackRef.setAttribute('disabled', '');
+  }
+
+  displayImagesOnThePage(inputValue);
+
+  refs.btnNextRef.removeAttribute('disabled');
+}
